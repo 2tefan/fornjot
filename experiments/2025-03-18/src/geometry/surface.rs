@@ -1,5 +1,6 @@
 use std::fmt;
 
+use fj_interop::Tolerance;
 use fj_math::{Aabb, Point, Vector};
 
 use crate::geometry::SweptCurve;
@@ -12,16 +13,16 @@ pub trait SurfaceGeometry: fmt::Debug {
 
     /// # Approximate the surface
     ///
-    /// Returns a set of points, in surface coordinates, that approximate the
-    /// surface. The points returned must be within the provided boundary. Not
-    /// outside of it, and not on it.
-    ///
     /// ## Implementation Note
     ///
     /// This method should take a tolerance parameter, to define how far the
     /// approximation is allowed to deviate from the actual surface. So far,
     /// this has not been necessary.
-    fn approximate(&self, boundary: &Aabb<2>) -> Vec<Point<2>>;
+    fn approximate(
+        &self,
+        boundary: &Aabb<2>,
+        tolerance: Tolerance,
+    ) -> SurfaceApproximation;
 }
 
 impl SurfaceGeometry for SweptCurve {
@@ -41,13 +42,39 @@ impl SurfaceGeometry for SweptCurve {
         Box::new((*self).translate(offset))
     }
 
-    fn approximate(&self, _: &Aabb<2>) -> Vec<Point<2>> {
-        // In a swept curve, the curve sweeps along a straight path. So the
-        // surface is only curved along one dimension.
-        //
-        // As a result, all points that could possibly be needed to approximate
-        // the surface, are already on the provided boundary. As per the
-        // contract of this method, we must not return those.
-        vec![]
+    fn approximate(
+        &self,
+        boundary: &Aabb<2>,
+        _: Tolerance,
+    ) -> SurfaceApproximation {
+        // This doesn't take the curvature of the surface into account, thus
+        // producing incorrect results unless the surface is flat.
+        let boundary = {
+            let [[min_u, min_v], [max_u, max_v]] = [boundary.min, boundary.max]
+                .map(|point| point.coords.components);
+
+            [
+                [min_u, min_v],
+                [min_u, max_v],
+                [max_u, min_v],
+                [max_u, max_v],
+            ]
+            .map(Point::from)
+            .into_iter()
+            .collect()
+        };
+
+        SurfaceApproximation {
+            curvature: vec![],
+            boundary,
+        }
     }
+}
+
+pub struct SurfaceApproximation {
+    /// # The points that approximate the curvature of the surface
+    pub curvature: Vec<Point<2>>,
+
+    /// # The points that approximate the boundary of the approximation
+    pub boundary: Vec<Point<2>>,
 }
