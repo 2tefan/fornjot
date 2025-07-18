@@ -20,6 +20,7 @@ pub fn model(
 ) -> Solid {
     let bottom_surface = core.layers.topology.surfaces.xy_plane();
     let sweep_path = Vector::from([0., 0., h]);
+    println!("Object has {} coords", coords.len());
 
     Sketch::empty(&core.layers.topology)
         .add_regions(

@@ -56,16 +56,20 @@ fn main() -> fj::Result {
         [[3.0, 0.0], [1.2, 0.0], [1.2, 0.5], [0.0, 0.2]],
         [[0.1, 2.0], [1.2, 0.0], [4.2, 0.5], [2.0, 0.2]],
     ];
-    let osm_coords = load_coords("/tmp/buildings.json").expect("Failed to load JSON");
+    let osm_coords = load_coords("/tmp/out.json").expect("Failed to load JSON");
 
     let mut all = Solid::empty();
 
+    let mut counter = 0;
+    let total = osm_coords.len();
     for coords in osm_coords {
-        let vec_coords =   coords.to_vec();
-        println!("{:#?}", vec_coords);
+        counter += 1;
+        //let vec_coords = coords.to_vec();
+        println!("{:#?}", coords);
+        println!("[{}/{}]", counter, total);
         let model = star::model(
-            vec_coords,
-            params.height,
+            coords,
+            2.0,
             &mut fj.core,
         );
 
